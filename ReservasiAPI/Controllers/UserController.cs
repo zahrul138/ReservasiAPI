@@ -34,6 +34,19 @@ public class UserController : ControllerBase
         return Ok(user);
     }
 
+    // ✅ Tambahan baru: Get user by email
+    [HttpGet("byemail/{email}")]
+    public async Task<ActionResult<User>> GetUserByEmail(string email)
+    {
+        var user = await _context.Users.FirstOrDefaultAsync(u => u.Email == email);
+        if (user == null)
+        {
+            return NotFound();
+        }
+
+        return Ok(user);
+    }
+
     [HttpPost]
     public async Task<ActionResult<User>> CreateUser(User user)
     {
@@ -70,8 +83,8 @@ public class UserController : ControllerBase
     [HttpPost("register")]
     public async Task<ActionResult<User>> Register(User user)
     {
-        user.Role = "Guest"; // Set role default
-        user.Createtime = DateTime.Now; // Isi waktu buat akun
+        user.Role = "Guest"; // Set default role
+        user.Createtime = DateTime.Now;
 
         _context.Users.Add(user);
         await _context.SaveChangesAsync();
@@ -102,5 +115,4 @@ public class UserController : ControllerBase
             }
         });
     }
-
 }

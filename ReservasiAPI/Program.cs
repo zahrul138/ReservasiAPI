@@ -1,5 +1,9 @@
 using ReservasiAPI.Repository;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
+
+using Microsoft.AspNetCore.Authentication.Cookies;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -8,14 +12,30 @@ builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowReactApp",
         policy => policy
-            .WithOrigins("http://localhost:3000") // ganti jika frontend kamu jalan di port lain
+            .WithOrigins("http://localhost:3000") // Ganti jika frontend kamu jalan di port lain
             .AllowAnyHeader()
-            .AllowAnyMethod());
+            .AllowAnyMethod()
+            .AllowCredentials()); // Tambahkan agar bisa simpan cookie login
 });
 
+// Tambahkan DB Context
 builder.Services.AddDbContext<ReservasiDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("ReservasiDB"))
 );
+
+// Tambahkan Identity
+builder.Services.AddIdentity<IdentityUser, IdentityRole>()
+    .AddEntityFrameworkStores<ReservasiDbContext>()
+    .AddDefaultTokenProviders();
+
+// Tambahkan autentikasi berbasis cookie
+builder.Services.ConfigureApplicationCookie(options =>
+{
+    options.Cookie.HttpOnly = true;
+    options.LoginPath = "/api/user/login";
+    options.AccessDeniedPath = "/access-denied";
+    options.SlidingExpiration = true;
+});
 
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
@@ -34,6 +54,8 @@ if (app.Environment.IsDevelopment())
 
 app.UseHttpsRedirection();
 
+// Middleware untuk autentikasi dan otorisasi
+app.UseAuthentication(); // Tambahkan ini sebelum UseAuthorization
 app.UseAuthorization();
 
 app.MapControllers();
