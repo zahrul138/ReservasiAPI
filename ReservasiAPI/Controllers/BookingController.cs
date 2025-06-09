@@ -46,15 +46,25 @@ namespace ReservasiAPI.Controllers
                 return BadRequest("User tidak ditemukan.");
             }
 
-            // Override Fullname dan Email dari User
             booking.Fullname = user.Fullname ?? "Guest";
             booking.Email = user.Email ?? "unknown@example.com";
 
-            // Set default status jika tidak diberikan
+            var isDuplicate = await _context.Bookings.AnyAsync(b =>
+                b.Fullname == booking.Fullname &&
+                b.Email == booking.Email &&
+                b.RoomType == booking.RoomType &&
+                b.CheckinDate.Date == booking.CheckinDate.Date &&
+                b.CheckoutDate.Date == booking.CheckoutDate.Date
+            );
+
+            if (isDuplicate)
+            {
+                return BadRequest(new { message = "Pesanan dengan data yang sama sudah ada sebelumnya." });
+            }
+
             if (string.IsNullOrWhiteSpace(booking.Status))
                 booking.Status = "Pending";
 
-            // Set waktu pembuatan
             booking.CreatedAt = DateTime.Now;
 
             _context.Bookings.Add(booking);
@@ -62,6 +72,7 @@ namespace ReservasiAPI.Controllers
 
             return CreatedAtAction(nameof(GetBooking), new { id = booking.Id }, booking);
         }
+
 
 
 
