@@ -44,6 +44,7 @@ builder.Services.AddSwaggerGen();
 var app = builder.Build();
 
 // Gunakan CORS sebelum routing
+app.UseStaticFiles();
 app.UseCors("AllowReactApp");
 
 if (app.Environment.IsDevelopment())

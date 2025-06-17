@@ -1,0 +1,120 @@
+﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
+using ReservasiAPI.Repository;
+using ReservasiAPI.Repository.Models;
+
+namespace ReservasiAPI.Controllers
+{
+    [ApiController]
+    [Route("api/[controller]")]
+    public class RoomController : ControllerBase
+    {
+        private readonly ReservasiDbContext _context;
+
+        public RoomController(ReservasiDbContext context)
+        {
+            _context = context;
+        }
+
+        [HttpGet]
+        public async Task<ActionResult<IEnumerable<Room>>> GetRooms()
+        {
+            return await _context.Rooms.ToListAsync();
+        }
+
+        [HttpGet("{id}")]
+        public async Task<ActionResult<Room>> GetRoom(int id)
+        {
+            var room = await _context.Rooms.FindAsync(id);
+            if (room == null) return NotFound();
+            return room;
+        }
+
+        [HttpPost]
+        public async Task<ActionResult<Room>> CreateRoom(Room room)
+        {
+            _context.Rooms.Add(room);
+            await _context.SaveChangesAsync();
+            return CreatedAtAction(nameof(GetRoom), new { id = room.Id }, room);
+        }
+
+        [HttpPut("{id}")]
+        public async Task<IActionResult> UpdateRoom(int id, [FromForm] Room room)
+        {
+            if (id != room.Id) return BadRequest();
+
+            var existingRoom = await _context.Rooms.FindAsync(id);
+            if (existingRoom == null) return NotFound();
+
+            // Deserialize manual jika format data array dikirim dalam string JSON
+            var form = Request.Form;
+
+            // Misal: "[\"WiFi\",\"TV\"]"
+            var featuresRaw = form["features"].ToString();
+            var amenitiesRaw = form["amenities"].ToString();
+            var policiesRaw = form["policies"].ToString();
+
+            // Pastikan JSON string valid dulu baru deserialize
+            existingRoom.Features = IsValidJson(featuresRaw) ? featuresRaw : existingRoom.Features;
+            existingRoom.Amenities = IsValidJson(amenitiesRaw) ? amenitiesRaw : existingRoom.Amenities;
+            existingRoom.Policies = IsValidJson(policiesRaw) ? policiesRaw : existingRoom.Policies;
+
+            // Update properti lain seperti biasa
+            existingRoom.Title = room.Title ?? existingRoom.Title;
+            existingRoom.ShortDescription = room.ShortDescription ?? existingRoom.ShortDescription;
+            existingRoom.FullDescription = room.FullDescription ?? existingRoom.FullDescription;
+            existingRoom.Price = room.Price != 0 ? room.Price : existingRoom.Price;
+            existingRoom.Size = room.Size ?? existingRoom.Size;
+            existingRoom.Occupancy = room.Occupancy ?? existingRoom.Occupancy;
+            existingRoom.Bed = room.Bed ?? existingRoom.Bed;
+            existingRoom.RoomView = room.RoomView ?? existingRoom.RoomView;
+            existingRoom.Image1 = room.Image1 ?? "";
+            existingRoom.Image2 = room.Image2 ?? "";
+            existingRoom.Image3 = room.Image3 ?? "";
+            existingRoom.Quantity = room.Quantity != 0 ? room.Quantity : existingRoom.Quantity;
+
+            try
+            {
+                await _context.SaveChangesAsync();
+            }
+            catch (DbUpdateConcurrencyException)
+            {
+                if (!_context.Rooms.Any(e => e.Id == id))
+                    return NotFound();
+                else
+                    throw;
+            }
+            return NoContent();
+        }
+
+        // Tambahkan fungsi validasi JSON
+        private static bool IsValidJson(string input)
+        {
+            if (string.IsNullOrWhiteSpace(input)) return false;
+            input = input.Trim();
+            if ((!input.StartsWith("[") || !input.EndsWith("]")) && (!input.StartsWith("{") || !input.EndsWith("}")))
+                return false;
+            try
+            {
+                var obj = System.Text.Json.JsonDocument.Parse(input);
+                return true;
+            }
+            catch
+            {
+                return false;
+            }
+        }
+
+
+        [HttpDelete("{id}")]
+        public async Task<IActionResult> DeleteRoom(int id)
+        {
+            var room = await _context.Rooms.FindAsync(id);
+            if (room == null) return NotFound();
+
+            _context.Rooms.Remove(room);
+            await _context.SaveChangesAsync();
+            return NoContent();
+        }
+    }
+}
