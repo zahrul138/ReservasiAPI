@@ -1,8 +1,7 @@
-using ReservasiAPI.Repository;
+﻿using ReservasiAPI.Repository;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
-
 using Microsoft.AspNetCore.Authentication.Cookies;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -15,7 +14,7 @@ builder.Services.AddCors(options =>
             .WithOrigins("http://localhost:3000") // Ganti jika frontend kamu jalan di port lain
             .AllowAnyHeader()
             .AllowAnyMethod()
-            .AllowCredentials()); // Tambahkan agar bisa simpan cookie login
+            .AllowCredentials());
 });
 
 // Tambahkan DB Context
@@ -37,6 +36,9 @@ builder.Services.ConfigureApplicationCookie(options =>
     options.SlidingExpiration = true;
 });
 
+// ✅ Tambahkan HttpClient agar bisa dipakai untuk call Midtrans
+builder.Services.AddHttpClient();
+
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
@@ -56,7 +58,7 @@ if (app.Environment.IsDevelopment())
 app.UseHttpsRedirection();
 
 // Middleware untuk autentikasi dan otorisasi
-app.UseAuthentication(); // Tambahkan ini sebelum UseAuthorization
+app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapControllers();

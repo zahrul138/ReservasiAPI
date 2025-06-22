@@ -51,5 +51,9 @@ namespace ReservasiAPI.Repository.Models
 
         [Required]
         public required string PaymentMethod { get; set; }
+
+        [Column("paymentstatus")]
+        [Required]
+        public string PaymentStatus { get; set; } = "unpaid";
     }
 }
