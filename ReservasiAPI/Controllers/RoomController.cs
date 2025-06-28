@@ -31,12 +31,25 @@ namespace ReservasiAPI.Controllers
         }
 
         [HttpPost]
-        public async Task<ActionResult<Room>> CreateRoom(Room room)
+        public async Task<ActionResult<Room>> CreateRoom([FromForm] Room room)
         {
+            // Ambil form data mentah dari request
+            var form = Request.Form;
+
+            var featuresRaw = form["features"].ToString();
+            var amenitiesRaw = form["amenities"].ToString();
+            var policiesRaw = form["policies"].ToString();
+
+            room.Features = IsValidJson(featuresRaw) ? featuresRaw : "[]";
+            room.Amenities = IsValidJson(amenitiesRaw) ? amenitiesRaw : "[]";
+            room.Policies = IsValidJson(policiesRaw) ? policiesRaw : "[]";
+
             _context.Rooms.Add(room);
             await _context.SaveChangesAsync();
+
             return CreatedAtAction(nameof(GetRoom), new { id = room.Id }, room);
         }
+
 
         [HttpPut("{id}")]
         public async Task<IActionResult> UpdateRoom(int id, [FromForm] Room room)
