@@ -32,6 +32,7 @@ namespace ReservasiAPI.Controllers
 
             return booking;
         }
+
         [HttpPost]
         public async Task<ActionResult<Booking>> CreateBooking(Booking booking)
         {
@@ -62,8 +63,10 @@ namespace ReservasiAPI.Controllers
                 return BadRequest(new { message = "Pesanan dengan data yang sama sudah ada sebelumnya." });
             }
 
-            if (string.IsNullOrWhiteSpace(booking.Status))
-                booking.Status = "Pending";
+            // ⬇️ Tambahkan fallback default jika field belum dikirim
+            booking.Status = string.IsNullOrWhiteSpace(booking.Status) ? "Pending" : booking.Status;
+            booking.PaymentMethod = string.IsNullOrWhiteSpace(booking.PaymentMethod) ? "cash" : booking.PaymentMethod;
+            booking.PaymentStatus = string.IsNullOrWhiteSpace(booking.PaymentStatus) ? "unpaid" : booking.PaymentStatus;
 
             booking.CreatedAt = DateTime.Now;
 
@@ -72,9 +75,6 @@ namespace ReservasiAPI.Controllers
 
             return CreatedAtAction(nameof(GetBooking), new { id = booking.Id }, booking);
         }
-
-
-
 
 
         [HttpPut("{id}")]

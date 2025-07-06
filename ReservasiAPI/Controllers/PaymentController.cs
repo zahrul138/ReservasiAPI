@@ -32,6 +32,10 @@ public class PaymentController : ControllerBase
             {
                 first_name = request.CustomerName,
                 email = request.CustomerEmail
+            },
+            callbacks = new
+            {
+                finish = "http://localhost:3000/bookingformthree"
             }
         };
 
@@ -48,4 +52,5 @@ public class PaymentController : ControllerBase
 
         return Ok(new { token });
     }
+    
 }
