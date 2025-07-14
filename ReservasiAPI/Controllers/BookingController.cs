@@ -63,10 +63,18 @@ namespace ReservasiAPI.Controllers
                 return BadRequest(new { message = "Pesanan dengan data yang sama sudah ada sebelumnya." });
             }
 
-            // ⬇️ Tambahkan fallback default jika field belum dikirim
+            // Set default values
             booking.Status = string.IsNullOrWhiteSpace(booking.Status) ? "Pending" : booking.Status;
-            booking.PaymentMethod = string.IsNullOrWhiteSpace(booking.PaymentMethod) ? "cash" : booking.PaymentMethod;
-            booking.PaymentStatus = string.IsNullOrWhiteSpace(booking.PaymentStatus) ? "unpaid" : booking.PaymentStatus;
+            booking.PaymentMethod = string.IsNullOrWhiteSpace(booking.PaymentMethod)
+                ? "Cash Payment"
+                : booking.PaymentMethod;
+
+            if (string.IsNullOrWhiteSpace(booking.PaymentStatus))
+            {
+                booking.PaymentStatus = booking.PaymentMethod.Equals("Cash Payment", StringComparison.OrdinalIgnoreCase)
+                    ? "Pending (Pay On Arrive)"
+                    : "Complete";
+            }
 
             booking.CreatedAt = DateTime.Now;
 
@@ -75,7 +83,6 @@ namespace ReservasiAPI.Controllers
 
             return CreatedAtAction(nameof(GetBooking), new { id = booking.Id }, booking);
         }
-
 
         [HttpPut("{id}")]
         public async Task<IActionResult> UpdateBooking(int id, Booking updatedBooking)
@@ -87,7 +94,6 @@ namespace ReservasiAPI.Controllers
             if (existingBooking == null)
                 return NotFound("Booking tidak ditemukan.");
 
-            // Optional: pastikan userId masih valid jika diubah
             if (existingBooking.UserId != updatedBooking.UserId)
             {
                 var user = await _context.Users.FindAsync(updatedBooking.UserId);
@@ -99,7 +105,7 @@ namespace ReservasiAPI.Controllers
                 existingBooking.Email = user.Email ?? "unknown@example.com";
             }
 
-            // Update field lainnya
+            // Update all relevant fields
             existingBooking.CheckinDate = updatedBooking.CheckinDate;
             existingBooking.CheckoutDate = updatedBooking.CheckoutDate;
             existingBooking.RoomType = updatedBooking.RoomType;
@@ -112,9 +118,9 @@ namespace ReservasiAPI.Controllers
             existingBooking.Region = updatedBooking.Region;
             existingBooking.Address = updatedBooking.Address;
             existingBooking.PaymentMethod = updatedBooking.PaymentMethod;
+            existingBooking.PaymentStatus = updatedBooking.PaymentStatus; // Tambahkan ini
 
             await _context.SaveChangesAsync();
-
             return NoContent();
         }
 

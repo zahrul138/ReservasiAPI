@@ -11,7 +11,7 @@ namespace ReservasiAPI.Repository.Models
         public int Id { get; set; }
 
         [Required]
-        public int UserId { get; set; }  
+        public int UserId { get; set; }
 
         [ForeignKey("UserId")]
         public User? User { get; set; }
@@ -52,8 +52,9 @@ namespace ReservasiAPI.Repository.Models
         [Required]
         public required string PaymentMethod { get; set; }
 
+
         [Column("paymentstatus")]
         [Required]
-        public string PaymentStatus { get; set; } = "unpaid";
+        public string PaymentStatus { get; set; } = "Pending (Pay On Arrive)";
     }
 }
