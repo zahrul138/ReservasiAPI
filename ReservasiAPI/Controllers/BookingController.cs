@@ -41,15 +41,26 @@ namespace ReservasiAPI.Controllers
                 return BadRequest(ModelState);
             }
 
+            // Validasi ketersediaan kamar
+            var room = await _context.Rooms.FirstOrDefaultAsync(r => r.Title == booking.RoomType);
+            if (room == null)
+            {
+                return BadRequest("Room type not found.");
+            }
+
+            if (room.Quantity <= 0)
+            {
+                return BadRequest("This room type is fully booked.");
+            }
+
+            // Validasi user
             var user = await _context.Users.FirstOrDefaultAsync(u => u.Id == booking.UserId);
             if (user == null)
             {
-                return BadRequest("User tidak ditemukan.");
+                return BadRequest("User not found.");
             }
 
-            booking.Fullname = user.Fullname ?? "Guest";
-            booking.Email = user.Email ?? "unknown@example.com";
-
+            // Validasi duplikat booking
             var isDuplicate = await _context.Bookings.AnyAsync(b =>
                 b.Fullname == booking.Fullname &&
                 b.Email == booking.Email &&
@@ -60,7 +71,7 @@ namespace ReservasiAPI.Controllers
 
             if (isDuplicate)
             {
-                return BadRequest(new { message = "Pesanan dengan data yang sama sudah ada sebelumnya." });
+                return BadRequest(new { message = "Duplicate booking detected." });
             }
 
             // Set default values
@@ -77,6 +88,9 @@ namespace ReservasiAPI.Controllers
             }
 
             booking.CreatedAt = DateTime.Now;
+
+            room.Quantity -= 1;
+            _context.Entry(room).State = EntityState.Modified;
 
             _context.Bookings.Add(booking);
             await _context.SaveChangesAsync();

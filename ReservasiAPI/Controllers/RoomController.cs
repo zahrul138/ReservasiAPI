@@ -33,7 +33,6 @@ namespace ReservasiAPI.Controllers
         [HttpPost]
         public async Task<ActionResult<Room>> CreateRoom([FromForm] Room room)
         {
-            // Ambil form data mentah dari request
             var form = Request.Form;
 
             var featuresRaw = form["features"].ToString();
@@ -59,20 +58,16 @@ namespace ReservasiAPI.Controllers
             var existingRoom = await _context.Rooms.FindAsync(id);
             if (existingRoom == null) return NotFound();
 
-            // Deserialize manual jika format data array dikirim dalam string JSON
             var form = Request.Form;
 
-            // Misal: "[\"WiFi\",\"TV\"]"
             var featuresRaw = form["features"].ToString();
             var amenitiesRaw = form["amenities"].ToString();
             var policiesRaw = form["policies"].ToString();
 
-            // Pastikan JSON string valid dulu baru deserialize
             existingRoom.Features = IsValidJson(featuresRaw) ? featuresRaw : existingRoom.Features;
             existingRoom.Amenities = IsValidJson(amenitiesRaw) ? amenitiesRaw : existingRoom.Amenities;
             existingRoom.Policies = IsValidJson(policiesRaw) ? policiesRaw : existingRoom.Policies;
 
-            // Update properti lain seperti biasa
             existingRoom.Title = room.Title ?? existingRoom.Title;
             existingRoom.ShortDescription = room.ShortDescription ?? existingRoom.ShortDescription;
             existingRoom.FullDescription = room.FullDescription ?? existingRoom.FullDescription;
@@ -100,7 +95,6 @@ namespace ReservasiAPI.Controllers
             return NoContent();
         }
 
-        // Tambahkan fungsi validasi JSON
         private static bool IsValidJson(string input)
         {
             if (string.IsNullOrWhiteSpace(input)) return false;
@@ -128,6 +122,27 @@ namespace ReservasiAPI.Controllers
             _context.Rooms.Remove(room);
             await _context.SaveChangesAsync();
             return NoContent();
+        }
+
+        [HttpPatch("restore-quantity")]
+        public async Task<IActionResult> RestoreRoomQuantity([FromBody] RestoreQuantityDto dto)
+        {
+            var room = await _context.Rooms.FirstOrDefaultAsync(r => r.Title == dto.RoomType);
+            if (room == null)
+            {
+                return NotFound("Room type not found.");
+            }
+
+            room.Quantity += 1;
+            _context.Entry(room).State = EntityState.Modified;
+            await _context.SaveChangesAsync();
+
+            return NoContent();
+        }
+
+        public class RestoreQuantityDto
+        {
+            public string RoomType { get; set; }
         }
     }
 }
