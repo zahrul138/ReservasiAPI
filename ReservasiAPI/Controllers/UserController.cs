@@ -10,10 +10,12 @@ namespace ReservasiAPI.Controllers;
 public class UserController : ControllerBase
 {
     private readonly ReservasiDbContext _context;
+    private readonly IWebHostEnvironment _env;
 
-    public UserController(ReservasiDbContext context)
+    public UserController(ReservasiDbContext context, IWebHostEnvironment env)
     {
         _context = context;
+        _env = env; // Simpan environment
     }
 
     [HttpGet]
@@ -83,7 +85,8 @@ public class UserController : ControllerBase
     [HttpPost("register")]
     public async Task<ActionResult<User>> Register(User user)
     {
-        user.Role = "Guest"; // Set default role
+        // Jika role tidak disertakan, default ke 'guest'
+        user.Role = string.IsNullOrEmpty(user.Role) ? "guest" : user.Role;
         user.Createtime = DateTime.Now;
 
         _context.Users.Add(user);
@@ -115,4 +118,33 @@ public class UserController : ControllerBase
             }
         });
     }
+
+    [HttpPost("create-admin")]
+    public async Task<IActionResult> CreateAdmin([FromBody] User adminUser)
+    {
+        // Hanya boleh di development
+        if (!_env.IsDevelopment())
+        {
+            return BadRequest("Only available in development");
+        }
+
+        // Validasi email sudah ada
+        if (await _context.Users.AnyAsync(u => u.Email == adminUser.Email))
+        {
+            return BadRequest("Email already exists");
+        }
+
+        adminUser.Role = "admin";
+        adminUser.Createtime = DateTime.Now;
+
+        _context.Users.Add(adminUser);
+        await _context.SaveChangesAsync();
+
+        return Ok(new
+        {
+            message = "Admin created successfully",
+            userId = adminUser.Id
+        });
+    }
 }
+

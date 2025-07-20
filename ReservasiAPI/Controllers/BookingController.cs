@@ -47,6 +47,7 @@ namespace ReservasiAPI.Controllers
             {
                 return BadRequest("Room type not found.");
             }
+            booking.RoomId = room.Id;
 
             if (room.Quantity <= 0)
             {

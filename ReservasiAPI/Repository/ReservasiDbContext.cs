@@ -13,6 +13,7 @@ namespace ReservasiAPI.Repository
         public virtual DbSet<User> Users { get; set; }
         public virtual DbSet<Booking> Bookings { get; set; }
         public virtual DbSet<Room> Rooms { get; set; }
+        public virtual DbSet<Review> Reviews { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -64,6 +65,34 @@ namespace ReservasiAPI.Repository
                 entity.Property(e => e.Policies).HasColumnName("policies").HasMaxLength(1000);
                 entity.Property(e => e.Quantity).HasColumnName("quantity").IsRequired();
                 entity.Property(e => e.CreatedAt).HasColumnName("createdat").HasDefaultValueSql("(getdate())");
+            });
+
+            // REVIEW ENTITY
+            modelBuilder.Entity<Review>(entity =>
+            {
+                entity.ToTable("reviews");
+                entity.HasKey(e => e.Id);
+
+                entity.HasOne(r => r.Booking)
+                      .WithMany()
+                      .HasForeignKey(r => r.BookingId)
+                      .OnDelete(DeleteBehavior.Cascade);
+
+                entity.HasOne(r => r.Room)
+                      .WithMany()
+                      .HasForeignKey(r => r.RoomId)
+                      .OnDelete(DeleteBehavior.Cascade);
+
+                entity.HasOne(r => r.User)
+                      .WithMany()
+                      .HasForeignKey(r => r.UserId)
+                      .OnDelete(DeleteBehavior.Cascade);
+
+                entity.Property(e => e.Status)
+                      .HasDefaultValue("pending");
+
+                entity.Property(e => e.CreatedAt)
+                      .HasDefaultValueSql("(getdate())");
             });
 
             OnModelCreatingPartial(modelBuilder);

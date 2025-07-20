@@ -56,5 +56,11 @@ namespace ReservasiAPI.Repository.Models
         [Column("paymentstatus")]
         [Required]
         public string PaymentStatus { get; set; } = "Pending (Pay On Arrive)";
+
+        [Column("roomid")]
+        public int? RoomId { get; set; }
+
+        [ForeignKey("RoomId")]
+        public Room? Room { get; set; }
     }
 }
